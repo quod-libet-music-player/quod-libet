@@ -1,0 +1,205 @@
+[project]
+name = "quodlibet"
+description = "A music library, tagger, and player"
+license = { text = "GPL-2.0-or-later" }
+keywords = ["audio", "music", "player", "tags", "gtk"]
+version = "4.7.0-pre"
+authors = [
+  { name = "Joe Wreschnig" },
+  { name = "Michael Urman" },
+  { name = "Steven Robertson" },
+  { name = "Christoph Reiter" },
+  { name = "Nick Boultbee" },
+]
+maintainers = [{ name = "Christoph Reiter" }, { name = "Nick Boultbee" }]
+requires-python = '>=3.10,<4.0'
+dependencies = [
+  "mutagen>=1.45,<2.0",
+  "feedparser>=6.0.11,<7.0.0",
+  "pycairo>=1.19,<2.0",
+  "pygobject>=3.34.0,<4.0.0",
+  "pyobjc-framework-mediaplayer>=12.1; sys_platform == 'darwin'",
+  "certifi>=2024.0.0; sys_platform == 'darwin'",
+]
+
+[project.optional-dependencies]
+# Use with "poetry install -E plugins" or "uv sync --extra plugins"
+plugins = [
+  "musicbrainzngs>=0.0.0,<1.0.0",
+  "dbus-python; platform_system == 'Linux'",
+  # 0.28 switched to lxml which is proving tricky on Windows
+  "soco>=0.27,<0.28",
+  "pypresence>=4.6.1,<5.0.0",
+  "regex>=2025.9.18",
+  "paho-mqtt>=1.6.1,<2.0.0",
+]
+
+[project.urls]
+homepage = "https://quodlibet.readthedocs.io/"
+repository = "https://github.com/quodlibet/quodlibet"
+documentation = "https://quodlibet.readthedocs.io/"
+
+[project.scripts]
+# `poetry run quodlibet` just runs the app (with no CLI args)
+operon = "quodlibet.operon:main"
+quodlibet-cmd = "quodlibet.main:main"
+exfalso-cmd = "quodlibet.exfalso:main"
+
+[project.gui-scripts]
+quodlibet = "quodlibet.main:main"
+exfalso = "quodlibet.exfalso:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8,<10",
+  "polib>=1.2.0,<2",
+  "coverage[toml]>=7.2.1,<8",
+  "mypy>=1.14.1,<1.19",
+  "flaky>=3.7.0,<4",
+  "types-docutils>=0.22.0,<0.23",
+  "types-certifi>=2021.10.8.3,<2022",
+  "types-requests>=2.28.11.15,<3",
+  "pyvirtualdisplay~=3.0 ; sys_platform == 'linux'",
+  "setuptools>=78.1.1,<82",
+  "packaging>=24.2",
+  "ruff==0.7.3 ; sys_platform == 'linux' or sys_platform == 'darwin'",
+]
+docs = [
+  "sphinx>=7.2.2,<9",
+  "sphinx_rtd_theme>=2,<4",
+  "sphinx-autobuild>=2024.10.3,<2025",
+]
+
+[tool.poetry]
+requires-poetry = ">=2.2"
+package-mode = false
+
+[tool.poetry.group.docs]
+optional = true
+dependencies = {}
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+exclude = "(dev-utils/.*)"
+follow_imports = "silent"
+disable_error_code = "annotation-unchecked"
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "gi.repository", "gdist.*"]
+ignore_errors = true
+
+[tool.pytest]
+junit_suite_name = "quodlibet"
+# Pytest long traces are way too long in bulk
+addopts = ["--tb=short"]
+filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+  "quality: Code quality tests (e.g. PEP-8 compliance)",
+  "network: Tests that need working internet connectivity",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+extend-exclude = ["dev-utils/*"]
+
+[tool.ruff.lint]
+select = [
+  "B",
+  "C",
+  "E",
+  "ERA",
+  "EXE",
+  "F",
+  "FLY",
+  "INT", # Gettext
+  "N",
+  "PIE",
+  "Q",
+  "RET", # return types - mostly useful IMO
+  "UP",
+  "W",
+]
+ignore = [
+  "E741", # Allow single-letter variables
+  "E402", # Allow imports not at top
+  "N817", # allow shorter imports (FakeDisplayItem as FDI)
+]
+
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = [
+  "N801", # allow Tformat_rating etc
+  "N802", # allow functions that look like classes e.g. `def PluginPreferences()`
+  "N806", # allow class-like variables in tests
+  "N816", # as above really
+]
+"**/cdefs.py" = ["ERA001"]
+"quodlibet/**/__init__.py" = [
+  "B018", # allow importing "without effect"
+]
+"quodlibet/**/cdefs.py" = [
+  "N801", # Allow classes with lowercase names
+]
+"quodlibet/query/*" = [
+  "N801",
+  "N802", # non-standard caps everywhere
+]
+"quodlibet/pattern/*" = [
+  "N801",
+  "N802", # non-standard caps everywhere
+]
+"quodlibet/qltk/**/*" = [
+  "N806", # allow vars that look like constants e.g. XFCE_NAME, FDO_PATH
+  "N802",
+]
+"quodlibet/ext/**/*" = [
+  "N802", # allow plugins to have methods like PluginPreferences etc
+]
+"quodlibet/fsn/**/*" = ["N801"]
+"quodlibet/cli.py" = [
+  "C901", # TODO: refactor process_arguments to simplify (46)
+]
+"quodlibet/formats/_audio.py" = [
+  "C901", # TODO: refactor __call__ to simplify (72!)
+]
+"tests/__init__.py" = [
+  "N815", # allow failUnless etc
+]
+"quodlibet/mmkeys/*" = [
+  "N803",
+  "N806", # allow non-standard naming
+]
+"quodlibet/session/*" = [
+  "N801", # allow lowercase classes
+]
+"quodlibet/util/winapi.py" = [
+  "N801",
+  "N802",
+  "N803", # allow non-standard naming
+]
+"quodlibet/util/dbusutils.py" = [
+  "N802",
+  "N806", # allow non-standard naming
+]
+"quodlibet/util/windows.py" = [
+  "N806", # allow non-standard naming
+]
+"quodlibet/util/iso639.py" = [
+  "N806", # allow non-standard naming
+]
+"quodlibet/util/i18n.py" = [
+  "N802", # strange naming for gettext
+]
+
+[tool.ruff.lint.mccabe]
+# TODO: turn this down, a lot!
+max-complexity = 40
+
+[tool.coverage.run]
+omit = ["quodlibet/packages/*"]
+include = ["quodlibet/*"]
+
+[build-system]
+requires = ["setuptools"]
